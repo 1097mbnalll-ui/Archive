@@ -39,7 +39,7 @@ test('النقطة 7: اللوحة الرئيسية', async (t) => {
     await c.login('boss');
     const text = (await c.get('/admin')).text_;
     assert.match(text, /رفعها أبو محمد/);
-    const order = [...text.matchAll(/<span class="title">([^<]+)<\/span>/g)].map((m) => m[1]);
+    const order = [...text.matchAll(/<span class="title"[^>]*>([^<]+)<\/span>/g)].map((m) => m[1]);
     assert.deepEqual(order, ['document-family', 'photo-family', 'photo-family', 'photo-public']);
   });
 

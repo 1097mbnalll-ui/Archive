@@ -50,7 +50,7 @@ module.exports = (locals) => {
             <a class="tile" href="/admin/items/${it.id}/edit">
               <img src="/media/${it.id}/thumb" alt="" loading="lazy" decoding="async">
               <span class="meta">
-                <span class="title">${it.title || 'بدون عنوان'}</span>
+                <span class="title" title="${it.title || ''}">${it.title || 'بدون عنوان'}</span>
                 <span class="sub">
                   <span class="privacy privacy-${it.privacy}">${it.privacy === 'public' ? 'عام' : 'العائلة'}</span>
                   <span class="clip">${it.uploader ? 'رفعها ' + it.uploader : ''}</span>

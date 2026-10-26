@@ -131,12 +131,20 @@
   function refresh() {
     const ready = entries.filter((e) => !e.problem).length;
     countLabel.textContent = entries.length ? '(' + entries.length + ')' : '';
-    saveButton.textContent = ready ? 'احفظ ' + ready + (ready === 1 ? ' صورة' : ' صور') : 'احفظ الصور';
+    // العربي: "3 صور" لكن "1 صورة" و"11 صورة" فما فوق.
+    saveButton.textContent = ready === 0 ? 'احفظ الصور' : 'احفظ ' + countText(ready);
     saveButton.disabled = busy || ready === 0;
     if (!busy) say(entries.length ? '' : 'ما اخترت صور بعد.');
   }
 
   function say(text) { status.textContent = text; }
+
+  // العدد بالعربي: صورة، صورتين، 3 صور، 11 صورة.
+  function countText(n) {
+    if (n === 1) return 'صورة وحدة';
+    if (n === 2) return 'صورتين';
+    return n + (n >= 3 && n <= 10 ? ' صور' : ' صورة');
+  }
 
   // ---------- الاختيار والسحب ----------
 
@@ -175,7 +183,7 @@
       xhr.addEventListener('load', () => {
         let body = null;
         try { body = JSON.parse(xhr.responseText); } catch (e) { /* رد غير متوقع */ }
-        if (xhr.status === 403) resolve({ fatal: 'انتهت جلستك أو صلاحيتك ما تسمح. حدّث الصفحة وادخل من جديد.' });
+        if (xhr.status === 401 || xhr.status === 403) resolve({ fatal: 'انتهت جلستك أو صلاحيتك ما تسمح. صورك باقية هنا: افتح صفحة الدخول في تبويب جديد، ادخل، وارجع اضغط حفظ.' });
         else if (body && body.results) resolve(body);
         else resolve({ fatal: (body && body.error) || 'صار خطأ في السيرفر' });
       });
@@ -226,7 +234,7 @@
       location.href = '/admin/items?msg=uploaded';
       return;
     }
-    say('انحفظت ' + saved + ' صورة. ' + (failed ? failed + ' تحتاج تصحيح، وهي باقية تحت.' : ''));
+    say((saved ? 'انحفظت ' + countText(saved) + '. ' : 'ما انحفظ شي. ') + (failed ? 'فيه ' + countText(failed) + ' ما انحفظت، وهي باقية تحت.' : ''));
     const firstBad = entries.find((e) => e.card.classList.contains('bad'));
     if (firstBad) firstBad.card.querySelector('.card-error').scrollIntoView({ block: 'center' });
   });

@@ -134,7 +134,9 @@ test('النقطة 4: رفع الصور', async (t) => {
     const guest = new Client(s.base);
     await guest.login('guest');
     assert.equal((await upload(guest, 'x', [{ name: 'a.jpg', data: img }], [{}])).status, 403);
-    assert.equal((await upload(new Client(s.base), 'x', [{ name: 'a.jpg', data: img }], [{}])).status, 302);
+    const anon = await upload(new Client(s.base), 'x', [{ name: 'a.jpg', data: img }], [{}]);
+    assert.equal(anon.status, 401);
+    assert.match(anon.json_.error, /انتهت جلستك/);
     assert.equal(tmpCount(), 0);
   });
 

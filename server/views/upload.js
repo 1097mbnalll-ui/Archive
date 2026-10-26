@@ -29,9 +29,9 @@ module.exports = (locals) => admin({
     </label>
     <input class="sr-only" id="files" name="files" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/tiff,image/avif" multiple>
 
-    <section class="panel" aria-labelledby="shared-title" id="shared">
+    <section class="panel" aria-labelledby="shared-heading" id="shared">
       <div>
-        <h2 id="shared-title">بيانات مشتركة</h2>
+        <h2 id="shared-heading">بيانات مشتركة</h2>
         <p class="note">اللي تكتبه هنا ينطبق على كل الصور الجديدة. وبعدها تقدر تعدّل كل صورة لحالها تحت.</p>
       </div>
       ${itemFields({ values: {}, people: locals.people, albums: locals.albums, occasions: locals.occasions, prefix: 'shared-' })}

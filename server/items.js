@@ -8,6 +8,9 @@ const SIZES = {
   thumb: { width: 480, height: 480, quality: 72 },
   display: { width: 2000, height: 2000, quality: 82 }
 };
+// حد أبعاد الصورة (حوالي 100 ميجابكسل)، عشان صورة ضخمة ما تثقّل السيرفر.
+const MAX_PIXELS = 100 * 1000 * 1000;
+const TOO_BIG = 'أبعاد الصورة كبيرة جدًا. صغّرها وجرّب مرة ثانية.';
 const ACCEPTED_FORMATS = new Set(['jpeg', 'png', 'webp', 'gif', 'tiff', 'avif']);
 const LIMITS = { title: 200, story: 10000, date_text: 60, place: 120, personName: 80, newPeople: 20 };
 
@@ -85,8 +88,10 @@ async function storeImage(file, dirs) {
   try {
     meta = await sharp(file.path, { animated: false }).metadata();
   } catch (err) {
+    if (/pixel limit/i.test(err.message)) throw new UserError(TOO_BIG);
     throw new UserError('الملف هذا مو صورة، أو نوعه غير مدعوم');
   }
+  if (meta.width * meta.height > MAX_PIXELS) throw new UserError(TOO_BIG);
   if (!ACCEPTED_FORMATS.has(meta.format)) {
     throw new UserError(meta.format === 'heif' ? 'صور الآيفون (HEIC) غير مدعومة. حوّلها إلى JPG أولًا.' : 'نوع الصورة غير مدعوم. المدعوم: JPG و PNG و WEBP و GIF.');
   }

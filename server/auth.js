@@ -111,8 +111,15 @@ function hasRole(user, role) {
 // يمنع الصفحة عن اللي ما دخل، أو اللي صلاحيته أقل من المطلوب.
 function requireRole(role) {
   return (req, res, next) => {
-    if (!req.user) return res.redirect('/login?next=' + encodeURIComponent(req.originalUrl));
-    if (!hasRole(req.user, role)) return res.status(403).render('forbidden');
+    const wantsJson = (req.headers.accept || '').includes('application/json');
+    if (!req.user) {
+      if (wantsJson) return res.status(401).json({ error: 'انتهت جلستك. ادخل من جديد.' });
+      return res.redirect('/login?next=' + encodeURIComponent(req.originalUrl));
+    }
+    if (!hasRole(req.user, role)) {
+      if (wantsJson) return res.status(403).json({ error: 'صلاحيتك ما تسمح.' });
+      return res.status(403).render('forbidden');
+    }
     next();
   };
 }
