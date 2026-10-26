@@ -17,7 +17,7 @@
 
 * { box-sizing: border-box; }
 
-body {
+body.viewer {
   margin: 0;
   min-height: 100vh;
   background: var(--paper);
@@ -43,30 +43,6 @@ h1, h2, .serif { font-family: 'Amiri', serif; font-weight: 700; line-height: 1.3
 .crumbs { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); }
 .crumbs a { min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; }
 .crumbs .current { color: var(--ink); font-weight: 600; }
-
-/* صفحة الدخول */
-.login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 48px 16px; }
-.login-card {
-  width: 100%; max-width: 440px; padding: 44px 36px; text-align: center;
-  background: var(--card); border: 1px solid var(--line); border-radius: 6px;
-  box-shadow: 0 2px 0 var(--line), 0 18px 40px rgba(58, 42, 28, .14);
-  display: flex; flex-direction: column; gap: 18px; align-items: center;
-}
-.login-card h1 { margin: 0; font-size: 40px; }
-.login-card p { margin: 0; color: var(--muted); }
-.login-card form { width: 100%; display: flex; flex-direction: column; gap: 10px; text-align: right; }
-.login-card label { font-weight: 600; }
-.login-card input {
-  width: 100%; height: 52px; padding: 0 16px; font: inherit; color: var(--ink);
-  background: var(--white); border: 1px solid #BFA580; border-radius: 4px;
-}
-.btn {
-  min-height: 52px; padding: 0 20px; border: 0; border-radius: 4px; cursor: pointer;
-  background: var(--clay); color: var(--cream); font: inherit; font-weight: 600; font-size: 18px;
-  transition: background-color .2s ease;
-}
-.btn:hover { background: var(--clay-dark); }
-.error { color: #9B2C1F; font-weight: 600; min-height: 1.7em; }
 
 /* الخلية */
 .view { max-width: 1120px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
@@ -158,12 +134,12 @@ h1, h2, .serif { font-family: 'Amiri', serif; font-weight: 700; line-height: 1.3
 .viewer-name { font-weight: 600; max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- حماية الصور ---------- */
-body {
+body.viewer {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
 }
-img { -webkit-user-drag: none; pointer-events: none; }
+body.viewer img { -webkit-user-drag: none; pointer-events: none; }
 
 .item .photo { width: 100%; aspect-ratio: 4 / 3; background: var(--photo) center / contain no-repeat; }
 
@@ -181,6 +157,9 @@ body.shielded .shield { display: flex; }
 body.shielded #app { visibility: hidden; }
 
 @media print {
-  body * { display: none !important; }
-  body::after { content: 'طباعة الأرشيف غير مسموحة'; display: block; padding: 40px; font-size: 24px; }
+  body.viewer * { display: none !important; }
+  body.viewer::after { content: 'طباعة الأرشيف غير مسموحة'; display: block; padding: 40px; font-size: 24px; }
 }
+
+.in-photo { margin: 0 0 8px; color: var(--muted); }
+.view .btn { display: inline-flex; align-items: center; text-decoration: none; }

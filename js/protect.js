@@ -3,13 +3,16 @@
 // هذي الطبقة تسكّر الطرق السهلة، والعلامة المائية تخلي أي تصوير يفضح صاحبه.
 (function () {
   const body = document.body;
+  // الحماية تشتغل في صفحات العرض بس، مو في لوحة الإدارة.
+  const active = () => body.classList.contains('viewer');
 
   // ---------- منع النسخ والحفظ والسحب والقائمة ----------
 
-  const block = (event) => event.preventDefault();
+  const block = (event) => { if (active()) event.preventDefault(); };
   ['contextmenu', 'dragstart', 'copy', 'cut', 'selectstart'].forEach((type) => document.addEventListener(type, block));
 
   document.addEventListener('keydown', (event) => {
+    if (!active()) return;
     const key = event.key.toLowerCase();
     const mod = event.ctrlKey || event.metaKey;
     // حفظ، طباعة، نسخ، تحديد الكل، عرض المصدر
@@ -24,7 +27,7 @@
 
   // زر Print Screen في ويندوز: نمسح اللي انحفظ في الحافظة.
   document.addEventListener('keyup', (event) => {
-    if (event.key === 'PrintScreen') {
+    if (event.key === 'PrintScreen' && active()) {
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText('').catch(() => {});
       shield(true);
       setTimeout(() => shield(false), 1500);
@@ -40,7 +43,7 @@
   cover.textContent = 'رجع للصفحة عشان تشوف الصور';
   body.append(cover);
 
-  function shield(on) { body.classList.toggle('shielded', on); }
+  function shield(on) { body.classList.toggle('shielded', on && active()); }
 
   document.addEventListener('visibilitychange', () => shield(document.hidden));
   window.addEventListener('blur', () => shield(true));
@@ -48,11 +51,13 @@
   window.addEventListener('pagehide', () => shield(true));
 
   // ---------- العلامة المائية ----------
-  // اسم الداخل ورمز جلسته والتاريخ، فوق كل الصفحة. لو انتشرت صورة، تعرف مصدرها من لوحة "كلمات السر".
+  // اسم الداخل ورمز جلسته والتاريخ، فوق كل الصفحة.
 
   const xml = (text) => String(text).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
 
+  let layer = null;
   function watermark(viewer) {
+    if (layer) layer.remove();
     const date = new Date().toISOString().slice(0, 10);
     // \u2066…\u2069 يعزل الرمز الإنجليزي والتاريخ عشان ما يتلخبط ترتيبهم وسط العربي.
     const iso = (text) => '\u2066' + text + '\u2069';
@@ -61,12 +66,14 @@
       '<text x="210" y="110" text-anchor="middle" direction="rtl" transform="rotate(-24 210 110)" ' +
       'font-family="Noto Naskh Arabic, Tahoma, sans-serif" font-size="17" fill="#3A2A1C" fill-opacity="0.18" ' +
       'stroke="#FBF5E9" stroke-opacity="0.22" stroke-width="2.5" paint-order="stroke">' + xml(line) + '</text></svg>';
-    const layer = document.createElement('div');
+    layer = document.createElement('div');
     layer.className = 'watermark';
     layer.setAttribute('aria-hidden', 'true');
     layer.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) + '")';
     body.append(layer);
   }
 
-  window.ArchiveProtect = { watermark };
+  function removeWatermark() { if (layer) layer.remove(); layer = null; }
+
+  window.ArchiveProtect = { watermark, removeWatermark };
 })();
