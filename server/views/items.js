@@ -10,7 +10,7 @@ function pageLink(filters, page) {
 }
 
 module.exports = (locals) => {
-  const { items, total, page, pages, filters, albums, people } = locals;
+  const { items, total, page, pages, filters, albums, occasions, people } = locals;
   const filtered = Object.values(filters).some(Boolean);
   return admin({
     ...locals,
@@ -30,6 +30,10 @@ module.exports = (locals) => {
       <div class="field"><label for="f-album">الألبوم</label>
         <select id="f-album" name="album"><option value="">الكل</option>
           ${albums.map((a) => html`<option value="${a.id}" ${filters.album === a.id ? 'selected' : ''}>${a.name}</option>`)}
+        </select></div>
+      <div class="field"><label for="f-occasion">المناسبة</label>
+        <select id="f-occasion" name="occasion"><option value="">الكل</option>
+          ${occasions.map((o) => html`<option value="${o.id}" ${filters.occasion === o.id ? 'selected' : ''}>${o.name}</option>`)}
         </select></div>
       <div class="field"><label for="f-person">الشخص</label>
         <select id="f-person" name="person"><option value="">الكل</option>

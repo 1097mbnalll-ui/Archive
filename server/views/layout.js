@@ -8,6 +8,7 @@ const MESSAGES = {
   'user-saved': 'تم حفظ التعديلات',
   'user-deleted': 'انتقل الفرد إلى سلة المحذوفات. تقدر ترجعه من هناك.',
   'restored': 'تم الاسترجاع',
+  'restore-failed': 'ما قدرنا نسترجعه: فيه واحد بنفس الاسم الحين. غيّر اسم الموجود وجرّب مرة ثانية.',
   'collection-added': 'تمت الإضافة',
   'collection-saved': 'تم حفظ التعديلات',
   'collection-deleted': 'انتقل إلى سلة المحذوفات. الصور اللي فيه ما انحذفت.',
@@ -77,7 +78,7 @@ function admin({ title, active, user, csrf, msg, body, scripts }) {
     </div>
   </header>
   <main id="main" class="page">
-    ${message ? html`<p class="flash" role="status">${message}</p>` : ''}
+    ${message ? html`<p class="${msg === 'restore-failed' ? 'error' : 'flash'}" role="status">${message}</p>` : ''}
     ${body}
   </main>
   ${(scripts || []).map((src) => html`<script src="${src}"></script>`)}

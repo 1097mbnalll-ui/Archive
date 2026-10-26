@@ -107,6 +107,7 @@ module.exports = function itemsRouter(db, dataDir) {
     const filters = {
       q: String(req.query.q || '').trim().slice(0, 100),
       album: Number(req.query.album) || null,
+      occasion: Number(req.query.occasion) || null,
       person: Number(req.query.person) || null,
       privacy: ['public', 'family'].includes(req.query.privacy) ? req.query.privacy : ''
     };
@@ -116,6 +117,7 @@ module.exports = function itemsRouter(db, dataDir) {
       params.push(like, like, like, like);
     }
     if (filters.album) { where.push('i.album_id = ?'); params.push(filters.album); }
+    if (filters.occasion) { where.push('i.occasion_id = ?'); params.push(filters.occasion); }
     if (filters.person) { where.push('EXISTS (SELECT 1 FROM item_people ip WHERE ip.item_id = i.id AND ip.person_id = ?)'); params.push(filters.person); }
     if (filters.privacy) { where.push('i.privacy = ?'); params.push(filters.privacy); }
 

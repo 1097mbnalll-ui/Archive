@@ -12,6 +12,13 @@ function trashTypes(db) {
       restore: db.prepare(`UPDATE items SET deleted_at = NULL, updated_at = datetime('now') WHERE id = ? AND deleted_at IS NOT NULL`),
       thumb: true
     },
+    collection: {
+      label: 'الألبومات والمناسبات',
+      role: 'editor',
+      list: db.prepare(`SELECT id, name || CASE kind WHEN 'album' THEN ' (ألبوم)' ELSE ' (مناسبة)' END AS name, deleted_at FROM collections WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC`),
+      restore: db.prepare(`UPDATE collections SET deleted_at = NULL, updated_at = datetime('now') WHERE id = ? AND deleted_at IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM collections o WHERE o.kind = collections.kind AND o.name = collections.name AND o.deleted_at IS NULL)`)
+    },
     user: {
       label: 'أفراد العائلة',
       role: 'admin',
@@ -37,7 +44,7 @@ module.exports = function trashRouter(db) {
     if (!type) return res.status(400).render('forbidden', { reason: 'نوع غير معروف' });
     if (!auth.hasRole(req.user, type.role)) return res.status(403).render('forbidden');
     const result = type.restore.run(Number(req.body.id));
-    res.redirect(result.changes ? '/admin/trash?msg=restored' : '/admin/trash');
+    res.redirect('/admin/trash?msg=' + (result.changes ? 'restored' : 'restore-failed'));
   });
 
   return router;
