@@ -28,21 +28,21 @@
 
   function readFields(root) {
     const get = (name) => { const el = root.querySelector('[name="' + name + '"]'); return el ? el.value : ''; };
-    const privacy = root.querySelector('[name="privacy"]:checked');
     return {
       title: get('title'), date_text: get('date_text'), place: get('place'), kind: get('kind'),
       album_id: get('album_id'), occasion_id: get('occasion_id'), new_people: get('new_people'), story: get('story'),
-      privacy: privacy ? privacy.value : get('privacy'),
+      privacy: get('privacy'),
       people: [...root.querySelectorAll('[name="people"]:checked')].map((el) => el.value)
     };
   }
 
   function writeFields(root, values) {
-    for (const name of ['title', 'date_text', 'place', 'kind', 'album_id', 'occasion_id', 'new_people', 'story']) {
+    for (const name of ['title', 'date_text', 'place', 'kind', 'album_id', 'occasion_id', 'new_people', 'story', 'privacy']) {
       const el = root.querySelector('[name="' + name + '"]');
       if (el && values[name] !== undefined) el.value = values[name];
     }
-    root.querySelectorAll('[name="privacy"]').forEach((el) => { el.checked = el.value === values.privacy; });
+    const privacyHint = root.querySelector('[name="privacy"]');
+    if (privacyHint) privacyHint.dispatchEvent(new Event('change', { bubbles: true }));
     const people = new Set(values.people || []);
     root.querySelectorAll('[name="people"]').forEach((el) => { el.checked = people.has(el.value); });
   }
@@ -91,7 +91,9 @@
       entries.push(entry);
       fragment.append(card);
     }
+    const added = [...fragment.children];
     list.append(fragment);
+    added.forEach((card) => writeFields(card, readFields(card)));
     refresh();
   }
 

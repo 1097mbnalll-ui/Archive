@@ -6,7 +6,7 @@ module.exports = (locals) => admin({
   ...locals,
   title: 'رفع صور',
   active: 'upload',
-  scripts: ['/admin/assets/upload.js'],
+  scripts: ['/admin/assets/upload.js', '/admin/assets/privacy-hint.js'],
   body: html`
   <div class="page-head">
     <div>

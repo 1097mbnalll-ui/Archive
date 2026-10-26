@@ -127,6 +127,8 @@ function createApp({ dataDir = path.join(ROOT, 'data') } = {}) {
 
   // ---------- الموقع ----------
 
+  app.use('/api/archive', require('./routes/archive-api')(db));
+
   app.use(express.static(path.join(ROOT, 'public')));
 
   app.use((req, res) => res.status(404).render('not-found'));

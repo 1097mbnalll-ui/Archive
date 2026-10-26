@@ -1,9 +1,19 @@
-(function () {
-  const data = window.ARCHIVE;
+(async function () {
   const app = document.getElementById('app');
   const topbar = document.getElementById('topbar');
   const crumbs = document.getElementById('crumbs');
-  const AUTH_KEY = 'archive-auth';
+  const account = document.getElementById('account');
+
+  // البيانات تجي من السيرفر: الزائر يشوف الصور العامة بس، وأفراد العائلة يشوفون كل شي.
+  let data;
+  try {
+    const res = await fetch('/api/archive', { credentials: 'same-origin' });
+    if (!res.ok) throw new Error(res.status);
+    data = await res.json();
+  } catch (e) {
+    app.textContent = 'ما قدرنا نحمّل الأرشيف. حدّث الصفحة وجرّب مرة ثانية.';
+    return;
+  }
 
   const personById = Object.fromEntries(data.people.map((p) => [p.id, p]));
   const itemById = Object.fromEntries(data.items.map((i) => [i.id, i]));
@@ -25,16 +35,6 @@
       node.append(child.nodeType ? child : document.createTextNode(child));
     }
     return node;
-  }
-
-  async function sha256(text) {
-    const bytes = new TextEncoder().encode(text);
-    const hash = await crypto.subtle.digest('SHA-256', bytes);
-    return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  function isAuthed() {
-    try { return localStorage.getItem(AUTH_KEY) === data.passwordHash; } catch (e) { return false; }
   }
 
   function itemsOf(personId) {
@@ -158,13 +158,14 @@
   }
 
   function itemCell(item, from) {
-    const hasImage = Boolean(item.image);
+    const picture = item.thumb || item.image;
+    const hasImage = Boolean(picture);
     return {
       node: el('a', {
         class: 'cell ' + item.type + (hasImage ? ' has-image' : ''),
         href: '#/item/' + item.id + (from ? '?from=' + from : ''),
-        'aria-label': item.title + '، ' + item.date,
-        style: hasImage ? { backgroundImage: 'url("' + item.image + '")' } : null
+        'aria-label': item.title + (item.date ? '، ' + item.date : ''),
+        style: hasImage ? { backgroundImage: 'url("' + picture + '")' } : null
       }, [
         hasImage ? null : el('span', { class: 'thumb-label' }, item.type === 'document' ? '[مستند]' : '[صورة]'),
         el('span', { class: 'sub' }, item.date)
@@ -188,34 +189,18 @@
     return el('section', { class: 'view' }, [el('p', { class: 'hint' }, hint), content]);
   }
 
-  function renderLogin() {
-    topbar.hidden = true;
-    const error = el('p', { class: 'error', role: 'alert' });
-    const input = el('input', { id: 'pw', type: 'password', autocomplete: 'current-password', placeholder: 'اكتب كلمة السر', required: true });
-    const form = el('form', {
-      onsubmit: async (event) => {
-        event.preventDefault();
-        if (await sha256(input.value) === data.passwordHash) {
-          try { localStorage.setItem(AUTH_KEY, data.passwordHash); } catch (e) { /* يكمّل بدون حفظ */ }
-          location.hash = '#/';
-          route(true);
-        } else {
-          error.textContent = 'كلمة السر غير صحيحة';
-          input.select();
-        }
-      }
-    }, [
-      el('label', { for: 'pw' }, 'كلمة السر'),
-      input,
-      el('button', { class: 'btn', type: 'submit' }, 'ادخل الأرشيف'),
-      error
-    ]);
-    app.replaceChildren(el('section', { class: 'login' }, el('div', { class: 'login-card' }, [
-      el('h1', null, 'أرشيف العائلة'),
-      el('p', null, 'ذكرياتنا وصورنا القديمة في مكان واحد. الموقع خاص بالعائلة فقط.'),
-      form
-    ])));
-    input.focus();
+  function renderAccount() {
+    account.replaceChildren();
+    if (!data.viewer) {
+      account.append(el('a', { href: '/login?next=/' }, 'دخول العائلة'));
+      return;
+    }
+    account.append(el('span', { class: 'viewer-name' }, data.viewer.name));
+    if (data.viewer.canEdit) account.append(el('a', { href: '/admin' }, 'لوحة الإدارة'));
+    account.append(el('form', { method: 'post', action: '/logout' }, [
+      el('input', { type: 'hidden', name: '_csrf', value: data.csrf }),
+      el('button', { type: 'submit', class: 'linklike' }, 'خروج')
+    ]));
   }
 
   function renderHome() {
@@ -226,7 +211,10 @@
     cells.push(navCell('حسب السنة', '#/years'));
     cells.push(navCell('المناسبات', '#/occasions'));
     cells.push(navCell('المستندات', '#/documents', docs + ' مستند'));
-    app.replaceChildren(view('اضغط على أي خلية وتدخل على ذكرياته', hive(cells)));
+    const hint = data.items.length
+      ? 'اضغط على أي خلية وتدخل على ذكرياته'
+      : (data.viewer ? 'ما فيه صور في الأرشيف بعد.' : 'ما فيه صور عامة بعد. أفراد العائلة يدخلون ويشوفون صور العائلة.');
+    app.replaceChildren(view(hint, hive(cells)));
   }
 
   function renderPerson(id) {
@@ -343,8 +331,7 @@
 
   // ---------- التنقل ----------
 
-  function route(fromLogin) {
-    if (!isAuthed()) return renderLogin();
+  function route(firstLoad) {
     topbar.hidden = false;
     const [path, query] = location.hash.replace(/^#/, '').split('?');
     const parts = path.split('/').filter(Boolean).map(decodeURIComponent);
@@ -358,9 +345,10 @@
     else if (parts[0] === 'years' || parts[0] === 'occasions') renderGroups(parts[0]);
     else renderNotFound();
 
-    if (!fromLogin) window.scrollTo(0, 0);
+    if (!firstLoad) window.scrollTo(0, 0);
   }
 
+  renderAccount();
   window.addEventListener('hashchange', () => route(false));
-  route(false);
+  route(true);
 })();

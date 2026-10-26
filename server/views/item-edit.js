@@ -8,6 +8,7 @@ module.exports = (locals) => {
     ...locals,
     title: 'تعديل صورة',
     active: 'items',
+    scripts: ['/admin/assets/privacy-hint.js'],
     body: html`
     <div class="page-head">
       <div>
