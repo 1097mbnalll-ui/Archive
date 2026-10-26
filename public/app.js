@@ -4,21 +4,46 @@
   const crumbs = document.getElementById('crumbs');
   const account = document.getElementById('account');
 
-  // البيانات تجي من السيرفر: الزائر يشوف الصور العامة بس، وأفراد العائلة يشوفون كل شي.
+  // البيانات تجي من السيرفر. لو ما فيه سيرفر (مثل نسخة العرض على GitHub Pages)، نعرض البيانات التجريبية.
   let data;
   try {
     const res = await fetch('/api/archive', { credentials: 'same-origin' });
+    if (res.status === 401) { location.href = '/login'; return; }
     if (!res.ok) throw new Error(res.status);
     data = await res.json();
   } catch (e) {
-    app.textContent = 'ما قدرنا نحمّل الأرشيف. حدّث الصفحة وجرّب مرة ثانية.';
-    return;
+    data = await loadDemo();
+    if (!data) {
+      app.textContent = 'ما قدرنا نحمّل الأرشيف. حدّث الصفحة وجرّب مرة ثانية.';
+      return;
+    }
   }
   if (window.ArchiveProtect) window.ArchiveProtect.watermark(data.viewer);
 
   const personById = Object.fromEntries(data.people.map((p) => [p.id, p]));
   const itemById = Object.fromEntries(data.items.map((i) => [i.id, i]));
   const byYear = (a, b) => (a.year || 0) - (b.year || 0);
+
+  // نسخة العرض: بيانات وهمية من data.js، بدون دخول ولا صور حقيقية.
+  function loadDemo() {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'data.js';
+      script.onload = () => {
+        const demo = window.ARCHIVE;
+        if (!demo) return resolve(null);
+        resolve({
+          demo: true,
+          familyName: demo.familyName,
+          viewer: { name: 'نسخة عرض', code: 'DEMO', canEdit: false },
+          people: demo.people,
+          items: demo.items
+        });
+      };
+      script.onerror = () => resolve(null);
+      document.head.append(script);
+    });
+  }
 
   // ---------- أدوات صغيرة ----------
 
@@ -192,6 +217,10 @@
 
   function renderAccount() {
     account.replaceChildren();
+    if (data.demo) {
+      account.append(el('span', { class: 'viewer-name' }, 'نسخة عرض ببيانات وهمية'));
+      return;
+    }
     account.append(el('span', { class: 'viewer-name' }, data.viewer.name));
     if (data.viewer.canEdit) account.append(el('a', { href: '/admin' }, 'لوحة الإدارة'));
     account.append(el('form', { method: 'post', action: '/logout' }, [
