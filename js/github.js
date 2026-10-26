@@ -1,5 +1,5 @@
 // الحفظ على GitHub: نكتب الملفات في الفرع اللي ينعرض منه الموقع، كلها في "حفظ" (commit) واحد.
-import { toBase64 } from './crypto.js';
+import { toBase64, fromBase64 } from './crypto.js';
 
 export class GitHubError extends Error {
   constructor(message, status) { super(message); this.status = status; }
@@ -41,16 +41,19 @@ export class GitHub {
   }
 
   // يقرأ ملف من الفرع مباشرة (أحدث نسخة، بدون انتظار تحديث الموقع). يرجع null لو ما موجود.
+  // نقرأ بصيغة JSON (base64) لأنها تشتغل دايمًا. الملفات الكبيرة (فوق 1 ميجا) نجيبها من واجهة الملفات الخام (blobs).
   async readFile(path) {
+    let info;
     try {
-      const res = await this.call('/contents/' + encodeURI(path) + '?ref=' + encodeURIComponent(this.branch) + '&t=' + Date.now(), {
-        headers: { Accept: 'application/vnd.github.raw' }, cache: 'no-store'
-      });
-      return new Uint8Array(await res.arrayBuffer());
+      info = await (await this.call('/contents/' + encodeURI(path) + '?ref=' + encodeURIComponent(this.branch) + '&t=' + Date.now(), { cache: 'no-store' })).json();
     } catch (err) {
       if (err.status === 404) return null;
       throw err;
     }
+    if (Array.isArray(info) || info.type !== 'file') throw new GitHubError('المسار ' + path + ' مو ملف', 500);
+    if (info.encoding === 'base64' && info.content) return fromBase64(info.content.replace(/\s/g, ''));
+    const blob = await (await this.call('/git/blobs/' + info.sha, { cache: 'no-store' })).json();
+    return fromBase64(blob.content.replace(/\s/g, ''));
   }
 
   // يحفظ مجموعة ملفات (bytes) ويشيل ملفات (null) في حفظ واحد.

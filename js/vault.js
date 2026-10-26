@@ -107,14 +107,19 @@ export class Vault {
   // ---------- الأرشيف ----------
 
   async loadCatalog() {
-    const allBytes = await this.read(PATHS.all);
-    const all = allBytes ? await decryptJson(this.session.all, allBytes) : { people: [], collections: [], items: [] };
-    let privateItems = [];
-    if (this.session.private) {
-      const bytes = await this.read(PATHS.private);
-      if (bytes) privateItems = (await decryptJson(this.session.private, bytes)).items;
+    try {
+      const allBytes = await this.read(PATHS.all);
+      const all = allBytes ? await decryptJson(this.session.all, allBytes) : { people: [], collections: [], items: [] };
+      let privateItems = [];
+      if (this.session.private) {
+        const bytes = await this.read(PATHS.private);
+        if (bytes) privateItems = (await decryptJson(this.session.private, bytes)).items;
+      }
+      return { people: all.people, collections: all.collections, items: all.items.concat(privateItems) };
+    } catch (err) {
+      if (err instanceof DOMException) throw new Error('ما قدرنا نفك تشفير الأرشيف. حدّث الصفحة وادخل من جديد. لو تكرر، يمكن الموقع لسا يتحدّث: انتظر دقيقتين وجرّب.');
+      throw err;
     }
-    return { people: all.people, collections: all.collections, items: all.items.concat(privateItems) };
   }
 
   // يشفّر الأرشيف ويحفظه مع أي ملفات صور، في حفظ واحد على GitHub.
