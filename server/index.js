@@ -7,8 +7,9 @@ const { uploadDirs, mediaPath } = require('./items');
 
 const ROOT = path.join(__dirname, '..');
 
-function createApp({ dataDir = path.join(ROOT, 'data') } = {}) {
+function createApp({ dataDir = process.env.DATA_DIR || path.join(ROOT, 'data') } = {}) {
   const db = openDb(dataDir);
+  bootstrapSharedPasswords(db, process.env);
   const app = express();
 
   app.set('db', db);
@@ -18,10 +19,12 @@ function createApp({ dataDir = path.join(ROOT, 'data') } = {}) {
   app.engine('js', (file, locals, done) => {
     try { done(null, require(file)(locals)); } catch (err) { done(err); }
   });
-  app.set('trust proxy', 'loopback');
+  // على الاستضافة، السيرفر يكون خلف وسيط (proxy) يتعامل مع HTTPS.
+  app.set('trust proxy', process.env.TRUST_PROXY ? Number(process.env.TRUST_PROXY) : 'loopback');
   app.disable('x-powered-by');
 
   app.use((req, res, next) => {
+    if (req.secure) res.set('Strict-Transport-Security', 'max-age=31536000');
     res.set({
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
@@ -178,7 +181,17 @@ function createApp({ dataDir = path.join(ROOT, 'data') } = {}) {
   return app;
 }
 
-module.exports = { createApp };
+// أول تشغيل على الاستضافة: لو ما فيه كلمة سر مشتركة محددة، ناخذها من إعدادات الاستضافة.
+// بعدها التغيير يكون من اللوحة، والإعدادات ما تغطي عليه.
+function bootstrapSharedPasswords(db, env) {
+  const sources = { visitor: env.VISITOR_PASSWORD, admin: env.ADMIN_PASSWORD };
+  for (const [which, password] of Object.entries(sources)) {
+    if (!password || auth.passwordProblem(password)) continue;
+    db.prepare("UPDATE users SET password_hash = ? WHERE shared = ? AND password_hash = 'disabled'").run(auth.hashPassword(password), which);
+  }
+}
+
+module.exports = { createApp, bootstrapSharedPasswords };
 
 if (require.main === module) {
   const port = Number(process.env.PORT) || 3000;
