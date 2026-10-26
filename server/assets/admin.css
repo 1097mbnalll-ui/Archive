@@ -215,3 +215,26 @@ dialog::backdrop { background: rgba(58, 42, 28, .45); }
 
 .ltr { direction: ltr; unicode-bidi: isolate; text-align: right; }
 dd { margin: 0; }
+
+.role-option { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; background: var(--white); border: 1px solid var(--line-strong); border-radius: var(--radius); cursor: pointer; }
+.role-option:has(input:checked) { background: var(--honey-soft); border-color: var(--honey); }
+.role-option input { margin-top: 7px; width: 18px; height: 18px; accent-color: var(--clay); }
+.role-option > span { display: flex; flex-direction: column; gap: 2px; }
+.confirm { max-width: 620px; }
+
+/* عناصر الصفحة تنكمش داخل الشاشة، والجداول العريضة تتمرر داخل إطارها. */
+.page > * { min-width: 0; max-width: 100%; }
+.table-wrap { position: relative; }
+.sr-only { inset-inline-start: 0; top: 0; }
+
+/* في الجوال: كل صف يصير بطاقة، بدل جدول يحتاج تمرير. */
+@media (max-width: 720px) {
+  table.stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  table.stack, table.stack tbody, table.stack tr, table.stack td { display: block; width: 100%; }
+  table.stack tr { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+  table.stack tr:last-child { border-bottom: 0; }
+  table.stack td { border: 0; padding: 0; width: auto; }
+  table.stack td:first-child { width: 100%; font-weight: 600; }
+  table.stack td:last-child { width: 100%; }
+  td .clip { max-width: 100%; }
+}

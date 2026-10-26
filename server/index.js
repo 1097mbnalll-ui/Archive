@@ -100,6 +100,7 @@ function createApp({ dataDir = path.join(ROOT, 'data') } = {}) {
 
   adminRouter.get('/', (req, res) => res.render('dashboard'));
   adminRouter.use('/users', require('./routes/users')(db));
+  adminRouter.use('/trash', require('./routes/trash')(db));
 
   app.use('/admin', adminRouter);
 
