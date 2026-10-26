@@ -7,6 +7,8 @@ const crypto = require('node:crypto');
 
 const SITE = path.join(__dirname, '..', '..', 'github-site');
 const TOKEN = 'github_pat_test';
+// مثل GitHub الحقيقي: الملفات الأكبر من هذا الحد ما ترجع داخل واجهة الملفات العادية، ولازم تتجاب من blobs.
+const INLINE_LIMIT = Number(process.env.MOCK_INLINE_LIMIT || 1024 * 1024);
 const API = '/api/repos/1097mbnalll-ui/Archive';
 
 const blobs = new Map();
@@ -37,8 +39,18 @@ const server = http.createServer(async (req, res) => {
       const file = decodeURI(rest.slice('/contents/'.length));
       const blobSha = currentFiles().get(file);
       if (!blobSha) return json(res, 404, { message: 'Not Found' });
-      res.writeHead(200, { 'Content-Type': 'application/octet-stream' });
-      return res.end(blobs.get(blobSha));
+      const data = blobs.get(blobSha);
+      const wantsRaw = /vnd\.github(\.v3)?\.raw/.test(req.headers.accept || '');
+      stats.reads = (stats.reads || 0) + 1;
+      // الصيغة الافتراضية JSON. الملف الكبير يرجع بدون محتوى.
+      if (wantsRaw && data.length <= INLINE_LIMIT) { res.writeHead(200, { 'Content-Type': 'application/vnd.github.raw' }); return res.end(data); }
+      return json(res, 200, { type: 'file', sha: blobSha, path: file, size: data.length, encoding: 'base64', content: data.length <= INLINE_LIMIT ? data.toString('base64').replace(/(.{60})/g, '$1\n') : '' });
+    }
+    if (rest.startsWith('/git/blobs/') && req.method === 'GET') {
+      const data = blobs.get(rest.split('/').pop());
+      if (!data) return json(res, 404, { message: 'Not Found' });
+      stats.blobReads = (stats.blobReads || 0) + 1;
+      return json(res, 200, { sha: rest.split('/').pop(), encoding: 'base64', size: data.length, content: data.toString('base64').replace(/(.{60})/g, '$1\n') });
     }
     if (rest === '/git/blobs' && req.method === 'POST') {
       const { content } = JSON.parse(await body(req));
