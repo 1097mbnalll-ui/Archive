@@ -212,3 +212,6 @@ dialog::backdrop { background: rgba(58, 42, 28, .45); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+.ltr { direction: ltr; unicode-bidi: isolate; text-align: right; }
+dd { margin: 0; }
