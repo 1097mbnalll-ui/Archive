@@ -255,3 +255,9 @@ ul.grid { list-style: none; margin: 0; padding: 0; }
 li.tile .actions { margin-top: 6px; }
 .tile .noimg { font-size: 15px; }
 .grid.wide { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+
+@media (max-width: 720px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .grid.wide { grid-template-columns: 1fr; }
+  .tile .meta { padding: 8px 10px; }
+}

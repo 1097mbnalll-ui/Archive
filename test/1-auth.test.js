@@ -46,7 +46,7 @@ test('النقطة 1: الدخول المحمي', async (t) => {
     assert.match(cookie, /SameSite=Lax/i);
     const page = await c.get('/admin');
     assert.equal(page.status, 200);
-    assert.match(page.text_, /أهلًا admin/);
+    assert.match(page.text_, /أهلًا <bdi>admin<\/bdi>/);
   });
 
   await t.test('الجلسة محفوظة كبصمة، مو الرمز نفسه', async () => {

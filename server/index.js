@@ -100,7 +100,22 @@ function createApp({ dataDir = path.join(ROOT, 'data') } = {}) {
     next();
   });
 
-  adminRouter.get('/', (req, res) => res.render('dashboard'));
+  const count = (sql) => db.prepare(sql).get().n;
+  const latestItems = db.prepare(`
+    SELECT i.id, i.title, i.privacy, u.display_name AS uploader
+    FROM items i LEFT JOIN users u ON u.id = i.uploaded_by
+    WHERE i.deleted_at IS NULL ORDER BY i.created_at DESC, i.id DESC LIMIT 8`);
+  adminRouter.get('/', (req, res) => res.render('dashboard', {
+    stats: {
+      photos: count("SELECT COUNT(*) AS n FROM items WHERE deleted_at IS NULL AND kind = 'photo'"),
+      documents: count("SELECT COUNT(*) AS n FROM items WHERE deleted_at IS NULL AND kind = 'document'"),
+      public: count("SELECT COUNT(*) AS n FROM items WHERE deleted_at IS NULL AND privacy = 'public'"),
+      albums: count("SELECT COUNT(*) AS n FROM collections WHERE deleted_at IS NULL AND kind = 'album'"),
+      occasions: count("SELECT COUNT(*) AS n FROM collections WHERE deleted_at IS NULL AND kind = 'occasion'"),
+      users: auth.hasRole(req.user, 'admin') ? count('SELECT COUNT(*) AS n FROM users WHERE deleted_at IS NULL') : null
+    },
+    latest: latestItems.all()
+  }));
   adminRouter.use('/users', require('./routes/users')(db));
   adminRouter.use('/trash', require('./routes/trash')(db));
   adminRouter.use('/collections', require('./routes/collections')(db));
