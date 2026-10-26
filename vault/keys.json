@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "iterations": 600000,
+  "visitor": {
+    "salt": "mLzlq+jx5yYevmMrxcZXNw==",
+    "all": "Zc5K8sRNCsaYYjpcZM48gx+PIjSFHlFQEvVBnZl3M2pzgVuUwHLQLmjxFERC4YDmBHUNCuChMTIC7LF+"
+  },
+  "admin": {
+    "salt": "cPlrc+Jf8nEfR9eCj54l7A==",
+    "all": "4sA2jkDqZ6eTKsqcwfmfmRfAALyoaIW6Pe3dXgvutCsq2+u6+Ezzw8+BFy05GOcNvyNUSmxkYdlG7FnS",
+    "private": "55EtIVF1kmnvQl22mwdO2Rkw+xi6LT78XeqXbFlN4cR6BkPOYPcHEC5gj/e1gZRxyzPhTLNKopp7jnBE"
+  }
+}
