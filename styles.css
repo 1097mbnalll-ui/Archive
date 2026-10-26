@@ -148,3 +148,11 @@ h1, h2, .serif { font-family: 'Amiri', serif; font-weight: 700; line-height: 1.3
   .cell { animation: none; }
   .cell.deco { opacity: .5; }
 }
+
+/* الدخول والخروج في الشريط العلوي */
+.account { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 15px; }
+.account a, .account .linklike { min-height: 44px; display: inline-flex; align-items: center; }
+.account form { margin: 0; }
+.linklike { background: none; border: 0; padding: 0; font: inherit; color: var(--clay); text-decoration: underline; cursor: pointer; }
+.linklike:hover { color: var(--clay-dark); }
+.viewer-name { font-weight: 600; max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
