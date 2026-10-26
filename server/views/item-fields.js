@@ -36,12 +36,12 @@ module.exports = function itemFields({ values = {}, errors = {}, people = [], al
       <label class="choice"><input type="checkbox" name="people" value="${person.id}" ${chosen.has(person.id) ? 'checked' : ''}><span title="${person.name}">${person.name}</span></label>`)}
     </div>
   </fieldset>`;
-  const privacy = field(p, 'privacy', 'مين يشوفها؟', errors, values.privacy === 'public'
-      ? 'أي أحد يفتح الموقع يشوفها، حتى بدون دخول.'
-      : 'أفراد العائلة بس، بعد ما يدخلون بحساباتهم.',
+  const privacy = field(p, 'privacy', 'مين يشوفها؟', errors, values.privacy === 'family'
+      ? 'أصحاب الحسابات الخاصة بس. اللي يدخلون بكلمة سر الزوار ما يشوفونها.'
+      : 'كل من يدخل الموقع، بكلمة سر الزوار أو بحسابه.',
     (fid, d) => html`<select id="${fid}" name="privacy" aria-describedby="${d}" class="privacy-select">
-      <option value="family" ${values.privacy !== 'public' ? 'selected' : ''}>العائلة فقط</option>
-      <option value="public" ${values.privacy === 'public' ? 'selected' : ''}>عام: أي أحد</option>
+      <option value="public" ${values.privacy !== 'family' ? 'selected' : ''}>كل العائلة</option>
+      <option value="family" ${values.privacy === 'family' ? 'selected' : ''}>خاصة: أصحاب الحسابات بس</option>
     </select>`);
   const rest = html`
   <div class="form-grid">

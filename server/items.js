@@ -47,7 +47,7 @@ function readMeta(input, { collections }) {
     story: clean(input.story, LIMITS.story + 1),
     date_text: clean(input.date_text, LIMITS.date_text + 1).replace(/\s+/g, ' '),
     place: clean(input.place, LIMITS.place + 1).replace(/\s+/g, ' '),
-    privacy: input.privacy === 'public' ? 'public' : 'family',
+    privacy: input.privacy === 'family' ? 'family' : 'public',
     album_id: input.album_id ? Number(input.album_id) : null,
     occasion_id: input.occasion_id ? Number(input.occasion_id) : null,
     people: [].concat(input.people || []).map(Number).filter((n) => Number.isInteger(n) && n > 0),

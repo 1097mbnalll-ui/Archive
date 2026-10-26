@@ -41,8 +41,8 @@ module.exports = (locals) => {
         </select></div>
       <div class="field"><label for="f-privacy">مين يشوفها</label>
         <select id="f-privacy" name="privacy"><option value="">الكل</option>
-          <option value="family" ${filters.privacy === 'family' ? 'selected' : ''}>العائلة فقط</option>
-          <option value="public" ${filters.privacy === 'public' ? 'selected' : ''}>عام</option>
+          <option value="public" ${filters.privacy === 'public' ? 'selected' : ''}>كل العائلة</option>
+          <option value="family" ${filters.privacy === 'family' ? 'selected' : ''}>خاصة</option>
         </select></div>
       <div class="actions"><button class="btn secondary" type="submit">اعرض</button>
         ${filtered ? html`<a href="/admin/items">مسح البحث</a>` : ''}</div>
@@ -62,7 +62,7 @@ module.exports = (locals) => {
             <span class="meta">
               <span class="title" title="${it.title || ''}">${it.title || 'بدون عنوان'}</span>
               <span class="sub">
-                <span class="privacy privacy-${it.privacy}">${it.privacy === 'public' ? 'عام' : 'العائلة'}</span>
+                <span class="privacy privacy-${it.privacy}">${it.privacy === 'family' ? 'خاصة' : 'الكل'}</span>
                 ${it.date_text ? html`<span>${it.date_text}</span>` : ''}
                 ${it.kind === 'document' ? html`<span>مستند</span>` : ''}
                 ${it.album ? html`<span class="clip">${it.album}</span>` : ''}

@@ -98,7 +98,7 @@ test('النقطة 1: الدخول المحمي', async (t) => {
 
   await t.test('رابط التحويل بعد الدخول ما يطلع لموقع ثاني', async () => {
     const c = new Client(s.base);
-    const res = await c.post('/login', { username: 'admin', password: 'password-123', next: '//evil.example' });
+    const res = await c.post('/login', { mode: 'account', username: 'admin', password: 'password-123', next: '//evil.example' });
     assert.equal(res.headers.get('location'), '/admin?msg=logged-in');
   });
 

@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node --no-warnings=ExperimentalWarning server/index.js",
     "create-admin": "node --no-warnings=ExperimentalWarning server/create-admin.js",
-    "test": "node --no-warnings=ExperimentalWarning --test test/*.test.js"
+    "test": "node --no-warnings=ExperimentalWarning --test test/*.test.js",
+    "set-password": "node --no-warnings=ExperimentalWarning server/set-password.js"
   },
   "engines": {
     "node": ">=22.13"

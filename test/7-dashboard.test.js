@@ -28,7 +28,7 @@ test('النقطة 7: اللوحة الرئيسية', async (t) => {
     const stat = (what) => text.match(new RegExp('<span class="num">([^<]+)</span><span class="what">' + what))[1];
     assert.equal(stat('صورة'), '٣');
     assert.equal(stat('مستند'), '١');
-    assert.equal(stat('عامة'), '١');
+    assert.equal(stat('خاصة'), '٣');
     assert.equal(stat('ألبوم'), '٢');
     assert.equal(stat('مناسبة'), '١');
     assert.equal(stat('فرد'), '٢');

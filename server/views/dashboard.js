@@ -6,7 +6,7 @@ module.exports = (locals) => {
   const tiles = [
     { num: stats.photos, what: 'صورة', href: '/admin/items' },
     { num: stats.documents, what: 'مستند', href: '/admin/items' },
-    { num: stats.public, what: 'عامة يشوفها أي أحد', href: '/admin/items?privacy=public' },
+    { num: stats.public, what: 'خاصة بأصحاب الحسابات', href: '/admin/items?privacy=family' },
     { num: stats.albums, what: 'ألبوم', href: '/admin/collections' },
     { num: stats.occasions, what: 'مناسبة', href: '/admin/collections' }
   ];
@@ -52,7 +52,7 @@ module.exports = (locals) => {
               <span class="meta">
                 <span class="title" title="${it.title || ''}">${it.title || 'بدون عنوان'}</span>
                 <span class="sub">
-                  <span class="privacy privacy-${it.privacy}">${it.privacy === 'public' ? 'عام' : 'العائلة'}</span>
+                  <span class="privacy privacy-${it.privacy}">${it.privacy === 'family' ? 'خاصة' : 'الكل'}</span>
                   <span class="clip">${it.uploader ? 'رفعها ' + it.uploader : ''}</span>
                 </span>
               </span>

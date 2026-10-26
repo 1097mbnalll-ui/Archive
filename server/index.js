@@ -58,25 +58,35 @@ function createApp({ dataDir = path.join(ROOT, 'data') } = {}) {
     res.render('login', { next: req.query.next });
   });
 
-  const findUser = db.prepare('SELECT * FROM users WHERE username = ? AND deleted_at IS NULL');
+  const findUser = db.prepare('SELECT * FROM users WHERE username = ? AND deleted_at IS NULL AND shared IS NULL');
+  const sharedAccounts = db.prepare("SELECT * FROM users WHERE shared IS NOT NULL AND deleted_at IS NULL AND password_hash != 'disabled'");
 
+  // طريقتين للدخول: كلمة سر مشتركة بدون اسم (للزوار أو المدير)، أو حساب خاص باسم وكلمة سر.
   app.post('/login', (req, res) => {
     const username = String(req.body.username || '').trim();
     const password = String(req.body.password || '');
-    const fail = (status, error) => res.status(status).render('login', { error, username, next: req.body.next });
+    const withAccount = req.body.mode === 'account';
+    const fail = (status, error) => res.status(status).render('login', { error, username, next: req.body.next, withAccount });
 
-    if (auth.isLocked(req, username)) {
+    const lockName = withAccount ? username : '*shared*';
+    if (auth.isLocked(req, lockName)) {
       return fail(429, 'محاولات كثيرة غلط. انتظر ' + auth.LOCK_MINUTES + ' دقيقة وجرّب مرة ثانية.');
     }
-    const user = username ? findUser.get(username) : null;
-    const ok = auth.verifyPassword(password, user ? user.password_hash : auth.DUMMY_HASH) && Boolean(user);
-    if (!ok) {
-      auth.recordFailure(req, username);
-      return fail(401, 'اسم المستخدم أو كلمة السر غلط');
+    let user = null;
+    if (withAccount) {
+      const found = username ? findUser.get(username) : null;
+      if (auth.verifyPassword(password, found ? found.password_hash : auth.DUMMY_HASH) && found) user = found;
+    } else if (password) {
+      user = sharedAccounts.all().find((a) => auth.verifyPassword(password, a.password_hash)) || null;
+      if (!user) auth.verifyPassword(password, auth.DUMMY_HASH);
     }
-    auth.clearFailures(req, username);
+    if (!user) {
+      auth.recordFailure(req, lockName);
+      return fail(401, withAccount ? 'اسم المستخدم أو كلمة السر غلط' : 'كلمة السر غلط');
+    }
+    auth.clearFailures(req, lockName);
     auth.endSession(db, req.sessionToken);
-    auth.setSessionCookie(req, res, auth.createSession(db, user.id));
+    auth.setSessionCookie(req, res, auth.createSession(db, user.id, req));
     const target = safeNext(req.body.next, { role: user.role });
     res.redirect(target === '/admin' ? '/admin?msg=logged-in' : target);
   });
@@ -109,14 +119,15 @@ function createApp({ dataDir = path.join(ROOT, 'data') } = {}) {
     stats: {
       photos: count("SELECT COUNT(*) AS n FROM items WHERE deleted_at IS NULL AND kind = 'photo'"),
       documents: count("SELECT COUNT(*) AS n FROM items WHERE deleted_at IS NULL AND kind = 'document'"),
-      public: count("SELECT COUNT(*) AS n FROM items WHERE deleted_at IS NULL AND privacy = 'public'"),
+      public: count("SELECT COUNT(*) AS n FROM items WHERE deleted_at IS NULL AND privacy = 'family'"),
       albums: count("SELECT COUNT(*) AS n FROM collections WHERE deleted_at IS NULL AND kind = 'album'"),
       occasions: count("SELECT COUNT(*) AS n FROM collections WHERE deleted_at IS NULL AND kind = 'occasion'"),
-      users: auth.hasRole(req.user, 'admin') ? count('SELECT COUNT(*) AS n FROM users WHERE deleted_at IS NULL') : null
+      users: auth.hasRole(req.user, 'admin') ? count('SELECT COUNT(*) AS n FROM users WHERE deleted_at IS NULL AND shared IS NULL') : null
     },
     latest: latestItems.all()
   }));
   adminRouter.use('/users', require('./routes/users')(db));
+  adminRouter.use('/access', require('./routes/access')(db));
   adminRouter.use('/trash', require('./routes/trash')(db));
   adminRouter.use('/collections', require('./routes/collections')(db));
   adminRouter.use('/', require('./routes/items')(db, dataDir));
@@ -130,21 +141,32 @@ function createApp({ dataDir = path.join(ROOT, 'data') } = {}) {
   const mediaItem = db.prepare('SELECT id, file_name, mime, privacy, deleted_at FROM items WHERE id = ?');
   app.get('/media/:id/:size', (req, res, next) => {
     const size = req.params.size;
-    if (!['thumb', 'display', 'original'].includes(size)) return next();
+    if (!req.user || !['thumb', 'display', 'original'].includes(size)) return next();
     const item = mediaItem.get(Number(req.params.id));
     const isEditor = auth.hasRole(req.user, 'editor');
-    const canSee = item && (isEditor || (!item.deleted_at && (item.privacy === 'public' || req.user)));
+    const canSee = item && (isEditor || (!item.deleted_at && auth.canSeeItem(req.user, item)));
     if (!canSee || (size === 'original' && !isEditor)) return next();
-    res.set('Cache-Control', 'private, max-age=3600');
+    // الزائر ما يقدر يفتح الصورة لحالها في صفحة جديدة عشان يحفظها، ولا تنحفظ في ذاكرة المتصفح.
+    if (!isEditor && req.headers['sec-fetch-dest'] === 'document') return next();
+    res.set('Cache-Control', isEditor ? 'private, max-age=3600' : 'private, no-store');
     res.type(size === 'original' ? item.mime : 'image/webp');
     res.sendFile(mediaPath(dirs, item, size), (err) => { if (err && !res.headersSent) next(); });
   });
 
   // ---------- الموقع ----------
+  // الموقع كامل مقفول: ما ينفتح شي بدون كلمة سر.
+
+  app.use((req, res, next) => {
+    if (req.user) return next();
+    if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'ادخل أول' });
+    if (req.method === 'GET' && (req.path === '/' || req.path.endsWith('.html'))) return res.redirect('/login');
+    next();
+  });
 
   app.use('/api/archive', require('./routes/archive-api')(db));
 
-  app.use(express.static(path.join(ROOT, 'public')));
+  app.use((req, res, next) => (req.user ? next() : res.status(404).render('not-found')));
+  app.use(express.static(path.join(ROOT, 'public'), { setHeaders: (res) => res.set('Cache-Control', 'private, no-store') }));
 
   app.use((req, res) => res.status(404).render('not-found'));
 

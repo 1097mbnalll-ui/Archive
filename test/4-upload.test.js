@@ -66,7 +66,7 @@ test('النقطة 4: رفع الصور', async (t) => {
     assert.equal(first.title, 'عرس عمي');
     assert.equal(first.year, 1974);
     assert.equal(first.album_id, albumId);
-    assert.equal(first.privacy, 'family', 'default is family-only');
+    assert.equal(first.privacy, 'public', 'default is the whole family');
     const names = s.db.prepare('SELECT p.name FROM item_people ip JOIN people p ON p.id = ip.person_id WHERE ip.item_id = ? ORDER BY p.id').all(first.id).map((r) => r.name);
     assert.deepEqual(names, ['الجد', 'الجدة', 'سعد', 'أم فهد']);
     const second = s.db.prepare('SELECT * FROM items WHERE id = ?').get(res.json_.results[1].id);
@@ -194,7 +194,7 @@ test('النقطة 4: رفع الصور', async (t) => {
     assert.equal(s.db.prepare('SELECT COUNT(*) AS n FROM item_people WHERE item_id = ?').get(id).n, 1);
   });
 
-  await t.test('الملف الأصلي للمحرر بس، والزائر ما يشوف صور العائلة الخاصة بدون دخول', async () => {
+  await t.test('الملف الأصلي للمحرر بس، واللي ما دخل ما يشوف شي', async () => {
     const id = s.db.prepare('SELECT id FROM items ORDER BY id LIMIT 1').get().id;
     assert.equal((await c.get('/media/' + id + '/original')).status, 200);
     const guest = new Client(s.base);
@@ -202,6 +202,7 @@ test('النقطة 4: رفع الصور', async (t) => {
     assert.equal((await guest.get('/media/' + id + '/display')).status, 200, 'family member sees family photo');
     assert.equal((await guest.get('/media/' + id + '/original')).status, 404);
     assert.equal((await new Client(s.base).get('/media/' + id + '/display')).status, 404, 'stranger sees nothing');
+    assert.equal((await guest.request('/media/' + id + '/display', { headers: { 'sec-fetch-dest': 'document' } })).status, 404, 'cannot open image alone in a tab');
     assert.equal((await c.get('/media/' + id + '/../../etc')).status, 404);
   });
 });

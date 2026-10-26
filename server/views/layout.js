@@ -15,7 +15,9 @@ const MESSAGES = {
   'item-saved': 'تم حفظ التعديلات',
   'item-deleted': 'انتقلت الصورة إلى سلة المحذوفات. تقدر ترجعها من هناك.',
   'uploaded': 'تم حفظ الصور',
-  'password-changed': 'تم تغيير كلمة السر'
+  'password-changed': 'تم تغيير كلمة السر',
+  'access-saved': 'تم حفظ كلمة السر. اللي كانوا داخلين بالقديمة طلعوا.',
+  'access-disabled': 'انوقفت كلمة السر، وكل اللي دخلوا بها طلعوا.'
 };
 
 const FONTS = 'https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap';
@@ -51,6 +53,7 @@ const NAV = [
   { href: '/admin/items', key: 'items', label: 'الصور', role: 'editor' },
   { href: '/admin/collections', key: 'collections', label: 'الألبومات والمناسبات', role: 'editor' },
   { href: '/admin/users', key: 'users', label: 'أفراد العائلة', role: 'admin' },
+  { href: '/admin/access', key: 'access', label: 'كلمات السر', role: 'admin' },
   { href: '/admin/trash', key: 'trash', label: 'المحذوفات', role: 'editor' }
 ];
 

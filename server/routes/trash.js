@@ -22,8 +22,8 @@ function trashTypes(db) {
     user: {
       label: 'أفراد العائلة',
       role: 'admin',
-      list: db.prepare(`SELECT id, display_name AS name, role AS extra, deleted_at FROM users WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC`),
-      restore: db.prepare(`UPDATE users SET deleted_at = NULL, updated_at = datetime('now') WHERE id = ? AND deleted_at IS NOT NULL`)
+      list: db.prepare(`SELECT id, display_name AS name, role AS extra, deleted_at FROM users WHERE deleted_at IS NOT NULL AND shared IS NULL ORDER BY deleted_at DESC`),
+      restore: db.prepare(`UPDATE users SET deleted_at = NULL, updated_at = datetime('now') WHERE id = ? AND deleted_at IS NOT NULL AND shared IS NULL`)
     }
   };
 }

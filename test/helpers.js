@@ -13,6 +13,9 @@ async function startServer() {
   const db = app.get('db');
   return {
     base, db, dataDir,
+    setShared(which, password) {
+      db.prepare('UPDATE users SET password_hash = ? WHERE shared = ?').run(hashPassword(password), which);
+    },
     addUser(username, role, password = 'password-123', displayName = username) {
       return db.prepare('INSERT INTO users (username, display_name, password_hash, role) VALUES (?, ?, ?, ?)')
         .run(username, displayName, hashPassword(password), role).lastInsertRowid;
@@ -53,8 +56,14 @@ class Client {
     });
   }
 
+  // دخول بحساب خاص (اسم وكلمة سر).
   async login(username, password = 'password-123') {
-    return this.post('/login', { username, password });
+    return this.post('/login', { mode: 'account', username, password });
+  }
+
+  // دخول بكلمة سر مشتركة (بدون اسم).
+  async loginShared(password) {
+    return this.post('/login', { mode: 'shared', password });
   }
 
   // يقرأ رمز الحماية من أي صفحة في اللوحة.

@@ -94,8 +94,7 @@ test('محاولات كسر اللوحة', async (t) => {
     assert.equal(res.status, 302);
     assert.match(res.headers.get('location'), /^\/login/);
     assert.equal(s.db.prepare("SELECT COUNT(*) AS n FROM collections WHERE name = 'anon'").get().n, 0);
-    const api = JSON.parse((await anon.get('/api/archive')).text_);
-    assert.ok(api.items.every((i) => i.title !== 'خاص'));
+    assert.equal((await anon.get('/api/archive')).status, 401);
   });
 
   await t.test('المحرر يحاول يرفع نفسه مدير', async () => {

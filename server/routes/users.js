@@ -10,10 +10,10 @@ module.exports = function usersRouter(db) {
 
   const listUsers = db.prepare(`
     SELECT id, username, display_name, role, created_at FROM users
-    WHERE deleted_at IS NULL ORDER BY CASE role WHEN 'admin' THEN 0 WHEN 'editor' THEN 1 ELSE 2 END, display_name`);
-  const getUser = db.prepare('SELECT id, username, display_name, role FROM users WHERE id = ? AND deleted_at IS NULL');
+    WHERE deleted_at IS NULL AND shared IS NULL ORDER BY CASE role WHEN 'admin' THEN 0 WHEN 'editor' THEN 1 ELSE 2 END, display_name`);
+  const getUser = db.prepare('SELECT id, username, display_name, role FROM users WHERE id = ? AND deleted_at IS NULL AND shared IS NULL');
   const usernameTaken = db.prepare('SELECT deleted_at FROM users WHERE username = ? AND id != ?');
-  const adminCount = db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND deleted_at IS NULL");
+  const adminCount = db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND deleted_at IS NULL AND shared IS NULL");
 
   // يفحص النموذج ويرجع الأخطاء لكل خانة.
   function validate(body, { isNew, id }) {
@@ -82,7 +82,7 @@ module.exports = function usersRouter(db) {
     if (values.password || values.role !== user.role) {
       auth.endUserSessions(db, user.id);
       if (isSelf) {
-        auth.setSessionCookie(req, res, auth.createSession(db, user.id));
+        auth.setSessionCookie(req, res, auth.createSession(db, user.id, req));
         if (values.role !== 'admin') return res.redirect(values.role === 'editor' ? '/admin?msg=user-saved' : '/');
       }
     }

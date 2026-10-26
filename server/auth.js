@@ -43,13 +43,17 @@ const DUMMY_HASH = hashPassword(crypto.randomBytes(16).toString('hex'));
 
 const sha256 = (value) => crypto.createHash('sha256').update(value).digest('hex');
 
-function createSession(db, userId) {
+// نحفظ عنوان الجهاز ونوع المتصفح مع الجلسة، عشان لو انتشرت صورة بعلامتها المائية نعرف مصدرها.
+function createSession(db, userId, req) {
   const token = crypto.randomBytes(32).toString('base64url');
   const csrf = crypto.randomBytes(24).toString('base64url');
-  db.prepare(`INSERT INTO sessions (token_hash, user_id, csrf, expires_at) VALUES (?, ?, ?, datetime('now', ?))`)
-    .run(sha256(token), userId, csrf, '+' + SESSION_DAYS + ' days');
+  db.prepare(`INSERT INTO sessions (token_hash, user_id, csrf, expires_at, ip, user_agent) VALUES (?, ?, ?, datetime('now', ?), ?, ?)`)
+    .run(sha256(token), userId, csrf, '+' + SESSION_DAYS + ' days', req ? String(req.ip || '') : '', req ? String(req.headers['user-agent'] || '').slice(0, 300) : '');
   return token;
 }
+
+// رمز قصير لكل جلسة يطلع في العلامة المائية.
+const sessionCode = (tokenHash) => tokenHash.slice(0, 6).toUpperCase();
 
 function endSession(db, token) {
   if (token) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(sha256(token));
@@ -85,7 +89,7 @@ function clearSessionCookie(res) {
 // يقرأ الجلسة من الكوكي ويحط المستخدم في req.user (أو null).
 function loadSession(db) {
   const find = db.prepare(`
-    SELECT s.csrf, u.id, u.username, u.display_name, u.role
+    SELECT s.csrf, s.token_hash, u.id, u.username, u.display_name, u.role, u.shared
     FROM sessions s JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = ? AND s.expires_at > datetime('now') AND u.deleted_at IS NULL`);
   return (req, res, next) => {
@@ -94,7 +98,7 @@ function loadSession(db) {
     if (req.sessionToken) {
       const row = find.get(sha256(req.sessionToken));
       if (row) {
-        req.user = { id: row.id, username: row.username, displayName: row.display_name, role: row.role };
+        req.user = { id: row.id, username: row.username, displayName: row.display_name, role: row.role, shared: row.shared, code: sessionCode(row.token_hash) };
         req.csrf = row.csrf;
       }
     }
@@ -102,6 +106,11 @@ function loadSession(db) {
     res.locals.csrf = req.csrf || '';
     next();
   };
+}
+
+// "عام" يشوفه كل من دخل، و"خاص" يشوفه أصحاب الحسابات الخاصة وكلمة سر المدير بس، مو كلمة سر الزوار.
+function canSeeItem(user, item) {
+  return Boolean(user) && (item.privacy === 'public' || user.shared !== 'visitor');
 }
 
 function hasRole(user, role) {
@@ -176,7 +185,7 @@ function clearFailures(req, username) {
 module.exports = {
   ROLES, LOCK_MINUTES,
   hashPassword, verifyPassword, passwordProblem, DUMMY_HASH,
-  createSession, endSession, endUserSessions, setSessionCookie, clearSessionCookie, loadSession,
-  hasRole, requireRole, checkCsrf, csrfValid, CSRF_MESSAGE, checkOrigin,
+  createSession, sessionCode, endSession, endUserSessions, setSessionCookie, clearSessionCookie, loadSession,
+  hasRole, canSeeItem, requireRole, checkCsrf, csrfValid, CSRF_MESSAGE, checkOrigin,
   isLocked, recordFailure, clearFailures
 };

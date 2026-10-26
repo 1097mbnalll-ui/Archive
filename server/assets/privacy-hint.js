@@ -1,8 +1,8 @@
 // يغيّر التوضيح تحت خانة "مين يشوفها؟" حسب الاختيار.
 (function () {
   const TEXT = {
-    family: 'أفراد العائلة بس، بعد ما يدخلون بحساباتهم.',
-    public: 'أي أحد يفتح الموقع يشوفها، حتى بدون دخول.'
+    family: 'أصحاب الحسابات الخاصة بس. اللي يدخلون بكلمة سر الزوار ما يشوفونها.',
+    public: 'كل من يدخل الموقع، بكلمة سر الزوار أو بحسابه.'
   };
   document.addEventListener('change', (event) => {
     const select = event.target.closest && event.target.closest('select.privacy-select');

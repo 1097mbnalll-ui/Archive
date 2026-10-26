@@ -73,6 +73,26 @@ CREATE INDEX IF NOT EXISTS items_created ON items(created_at);
 CREATE INDEX IF NOT EXISTS sessions_user ON sessions(user_id);
 `;
 
+// حسابين مشتركين: واحد لكلمة سر الزوار، وواحد لكلمة سر المدير.
+// ما يدخلون باسم مستخدم، وكلمة السر حقهم "disabled" لين يحددها المدير.
+const SHARED_ACCOUNTS = [
+  { shared: 'visitor', username: '~visitor', display_name: 'زائر العائلة', role: 'viewer' },
+  { shared: 'admin', username: '~admin', display_name: 'المدير', role: 'admin' }
+];
+
+// تحديثات على قاعدة بيانات موجودة: تضيف الأعمدة الجديدة بدون ما تمس البيانات.
+function migrate(db) {
+  const columns = (table) => db.prepare('PRAGMA table_info(' + table + ')').all().map((c) => c.name);
+  if (!columns('users').includes('shared')) db.exec('ALTER TABLE users ADD COLUMN shared TEXT');
+  const sessionCols = columns('sessions');
+  if (!sessionCols.includes('ip')) db.exec("ALTER TABLE sessions ADD COLUMN ip TEXT NOT NULL DEFAULT ''");
+  if (!sessionCols.includes('user_agent')) db.exec("ALTER TABLE sessions ADD COLUMN user_agent TEXT NOT NULL DEFAULT ''");
+  const insert = db.prepare("INSERT INTO users (username, display_name, password_hash, role, shared) VALUES (?, ?, 'disabled', ?, ?)");
+  for (const a of SHARED_ACCOUNTS) {
+    if (!db.prepare('SELECT 1 FROM users WHERE shared = ?').get(a.shared)) insert.run(a.username, a.display_name, a.role, a.shared);
+  }
+}
+
 // أسماء الأشخاص الأولى، نفس اللي في الموقع التجريبي.
 const STARTER_PEOPLE = ['الجد', 'الجدة', 'الوالد', 'الوالدة', 'العم', 'العمة', 'الخال', 'الخالة'];
 
@@ -81,6 +101,7 @@ function openDb(dataDir) {
   const db = new DatabaseSync(path.join(dataDir, 'archive.db'));
   db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
   db.exec(SCHEMA);
+  migrate(db);
   if (db.prepare('SELECT COUNT(*) AS n FROM people').get().n === 0) {
     const insert = db.prepare('INSERT INTO people (name) VALUES (?)');
     for (const name of STARTER_PEOPLE) insert.run(name);

@@ -144,8 +144,8 @@ td .clip { display: block; max-width: 30ch; overflow: hidden; text-overflow: ell
 .role-editor { background: var(--honey-soft); color: var(--ink); }
 .role-viewer { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); }
 .privacy { display: inline-flex; padding: 1px 10px; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap; }
-.privacy-public { background: var(--ok-soft); color: var(--ok); }
-.privacy-family { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); }
+.privacy-public { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); }
+.privacy-family { background: var(--honey-soft); color: var(--ink); border: 1px solid var(--honey); }
 
 .empty { padding: 32px 20px; text-align: center; background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--radius); display: flex; flex-direction: column; gap: 12px; align-items: center; }
 
@@ -261,3 +261,6 @@ li.tile .actions { margin-top: 6px; }
   .grid.wide { grid-template-columns: 1fr; }
   .tile .meta { padding: 8px 10px; }
 }
+.status { display: inline-flex; padding: 2px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; }
+.status-on { background: var(--ok-soft); color: var(--ok); }
+.status-off { background: var(--danger-soft); color: var(--danger); }
