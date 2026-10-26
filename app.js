@@ -14,6 +14,7 @@
     app.textContent = 'ما قدرنا نحمّل الأرشيف. حدّث الصفحة وجرّب مرة ثانية.';
     return;
   }
+  if (window.ArchiveProtect) window.ArchiveProtect.watermark(data.viewer);
 
   const personById = Object.fromEntries(data.people.map((p) => [p.id, p]));
   const itemById = Object.fromEntries(data.items.map((i) => [i.id, i]));
@@ -191,10 +192,6 @@
 
   function renderAccount() {
     account.replaceChildren();
-    if (!data.viewer) {
-      account.append(el('a', { href: '/login?next=/' }, 'دخول العائلة'));
-      return;
-    }
     account.append(el('span', { class: 'viewer-name' }, data.viewer.name));
     if (data.viewer.canEdit) account.append(el('a', { href: '/admin' }, 'لوحة الإدارة'));
     account.append(el('form', { method: 'post', action: '/logout' }, [
@@ -302,8 +299,9 @@
 
     app.replaceChildren(el('section', { class: 'view' }, el('div', { class: 'item' }, [
       el('figure', null, [
+        // الصورة خلفية بدل <img>، عشان ما تطلع لها قائمة "حفظ الصورة" في الجوال والكمبيوتر.
         item.image
-          ? el('a', { href: item.image, target: '_blank', rel: 'noopener' }, el('img', { src: item.image, alt: item.title }))
+          ? el('div', { class: 'photo', role: 'img', 'aria-label': item.title, style: { backgroundImage: 'url("' + item.image + '")' } })
           : el('div', { class: 'placeholder' }, item.type === 'document' ? '[المستند]' : '[الصورة]'),
         item.caption ? el('figcaption', null, item.caption) : null
       ]),
