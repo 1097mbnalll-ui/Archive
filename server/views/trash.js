@@ -24,7 +24,7 @@ module.exports = (locals) => {
           <tbody>
           ${g.rows.map((r) => html`
             <tr>
-              <td><span class="clip" title="${r.name}">${r.name || '(بدون عنوان)'}</span></td>
+              <td class="trash-name">${g.key === 'item' ? html`<img class="trash-thumb" src="/media/${r.id}/thumb" alt="" loading="lazy">` : ''}<span class="clip" title="${r.name}">${r.name || '(بدون عنوان)'}</span></td>
               <td><span class="ltr">${r.deleted_at}</span></td>
               <td>
                 <form method="post" action="/admin/trash/restore">

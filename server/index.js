@@ -3,6 +3,7 @@ const path = require('node:path');
 const express = require('express');
 const { openDb } = require('./db');
 const auth = require('./auth');
+const { uploadDirs, mediaPath } = require('./items');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -92,7 +93,8 @@ function createApp({ dataDir = path.join(ROOT, 'data') } = {}) {
 
   const adminRouter = express.Router();
   adminRouter.use(auth.requireRole('editor'));
-  adminRouter.use(auth.checkCsrf);
+  // الرفع يتحقق من رمز الحماية بنفسه بعد قراءة الملفات.
+  adminRouter.use((req, res, next) => (req.is('multipart/form-data') ? next() : auth.checkCsrf(req, res, next)));
   adminRouter.use((req, res, next) => {
     res.locals.msg = req.query.msg;
     next();
@@ -101,8 +103,26 @@ function createApp({ dataDir = path.join(ROOT, 'data') } = {}) {
   adminRouter.get('/', (req, res) => res.render('dashboard'));
   adminRouter.use('/users', require('./routes/users')(db));
   adminRouter.use('/trash', require('./routes/trash')(db));
+  adminRouter.use('/', require('./routes/items')(db, dataDir));
 
   app.use('/admin', adminRouter);
+
+  // ---------- ملفات الصور ----------
+  // الصور ما تنعرض مباشرة من المجلد: كل طلب يمر على فحص الخصوصية.
+
+  const dirs = uploadDirs(dataDir);
+  const mediaItem = db.prepare('SELECT id, file_name, mime, privacy, deleted_at FROM items WHERE id = ?');
+  app.get('/media/:id/:size', (req, res, next) => {
+    const size = req.params.size;
+    if (!['thumb', 'display', 'original'].includes(size)) return next();
+    const item = mediaItem.get(Number(req.params.id));
+    const isEditor = auth.hasRole(req.user, 'editor');
+    const canSee = item && (isEditor || (!item.deleted_at && (item.privacy === 'public' || req.user)));
+    if (!canSee || (size === 'original' && !isEditor)) return next();
+    res.set('Cache-Control', 'private, max-age=3600');
+    res.type(size === 'original' ? item.mime : 'image/webp');
+    res.sendFile(mediaPath(dirs, item, size), (err) => { if (err && !res.headersSent) next(); });
+  });
 
   // ---------- الموقع ----------
 

@@ -238,3 +238,16 @@ dd { margin: 0; }
   table.stack td:last-child { width: 100%; }
   td .clip { max-width: 100%; }
 }
+
+.confirm-thumb { max-width: 220px; border-radius: var(--radius); display: block; }
+.trash-name { display: flex; align-items: center; gap: 12px; }
+.trash-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; background: var(--surface-2); flex: none; }
+ul.grid { list-style: none; margin: 0; padding: 0; }
+.field-error[hidden] { display: none; }
+.preview .card-error { margin: 0; }
+
+.more { border-top: 1px solid var(--line); padding-top: 10px; }
+.more summary { cursor: pointer; color: var(--clay); font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.more[open] summary { margin-bottom: 10px; }
+.nothumb { display: flex; align-items: center; justify-content: center; text-align: center; color: var(--muted); font-size: 14px; padding: 8px; }
+.nothumb[hidden], .thumb[hidden] { display: none; }

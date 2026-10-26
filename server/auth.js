@@ -118,14 +118,17 @@ function requireRole(role) {
 }
 
 // كل طلب يغيّر شيء لازم يجي من نفس الموقع ومعه رمز الحماية.
-function checkCsrf(req, res, next) {
-  if (req.method !== 'POST') return next();
+function csrfValid(req) {
   const sent = (req.body && req.body._csrf) || req.headers['x-csrf-token'];
-  if (!req.csrf || typeof sent !== 'string' || sent.length !== req.csrf.length ||
-      !crypto.timingSafeEqual(Buffer.from(sent), Buffer.from(req.csrf))) {
-    return res.status(403).render('forbidden', { reason: 'انتهت صلاحية الصفحة. ارجع وحدّثها وجرّب مرة ثانية.' });
-  }
-  next();
+  return Boolean(req.csrf) && typeof sent === 'string' && sent.length === req.csrf.length &&
+    crypto.timingSafeEqual(Buffer.from(sent), Buffer.from(req.csrf));
+}
+
+const CSRF_MESSAGE = 'انتهت صلاحية الصفحة. ارجع وحدّثها وجرّب مرة ثانية.';
+
+function checkCsrf(req, res, next) {
+  if (req.method !== 'POST' || csrfValid(req)) return next();
+  res.status(403).render('forbidden', { reason: CSRF_MESSAGE });
 }
 
 function checkOrigin(req, res, next) {
@@ -167,6 +170,6 @@ module.exports = {
   ROLES, LOCK_MINUTES,
   hashPassword, verifyPassword, passwordProblem, DUMMY_HASH,
   createSession, endSession, endUserSessions, setSessionCookie, clearSessionCookie, loadSession,
-  hasRole, requireRole, checkCsrf, checkOrigin,
+  hasRole, requireRole, checkCsrf, csrfValid, CSRF_MESSAGE, checkOrigin,
   isLocked, recordFailure, clearFailures
 };

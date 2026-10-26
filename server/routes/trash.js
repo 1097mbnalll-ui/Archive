@@ -5,6 +5,13 @@ const auth = require('../auth');
 // كل نوع ينحذف له تعريف هنا: من يقدر يشوفه، وكيف نجيبه، وكيف نرجعه.
 function trashTypes(db) {
   return {
+    item: {
+      label: 'الصور والمستندات',
+      role: 'editor',
+      list: db.prepare(`SELECT id, CASE WHEN title = '' THEN original_name ELSE title END AS name, deleted_at FROM items WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC`),
+      restore: db.prepare(`UPDATE items SET deleted_at = NULL, updated_at = datetime('now') WHERE id = ? AND deleted_at IS NOT NULL`),
+      thumb: true
+    },
     user: {
       label: 'أفراد العائلة',
       role: 'admin',
